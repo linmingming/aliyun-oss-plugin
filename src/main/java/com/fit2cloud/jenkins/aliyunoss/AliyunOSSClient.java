@@ -7,6 +7,7 @@ import hudson.model.AbstractBuild;
 import hudson.model.BuildListener;
 import org.apache.commons.lang.time.DurationFormatUtils;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.FileNameMap;
@@ -81,6 +82,8 @@ public class AliyunOSSClient {
 					return filesUploaded;
 				}
 
+				listener.getLogger().println("上传fileName是：" + fileName);
+
 				FilePath fp = new FilePath(workspacePath, fileName);
 
 				if (fp.exists() && !fp.isDirectory()) {
@@ -92,10 +95,12 @@ public class AliyunOSSClient {
 
 				if (paths.length != 0) {
 					for (FilePath src : paths) {
+						listener.getLogger().println("File: " + src.getName() + ", Remote: " + src.getRemote());
+						String name = Utils.getFilePathPrefix(fileName, src.getRemote()) + src.getName();
 						String key = "";
 						if (Utils.isNullOrEmpty(expVP)
 								&& Utils.isNullOrEmpty(embeddedVP)) {
-							key = src.getName();
+							key = name;
 						} else {
 							String prefix = expVP;
 							if (!Utils.isNullOrEmpty(embeddedVP)) {
@@ -105,7 +110,9 @@ public class AliyunOSSClient {
 									prefix = expVP + embeddedVP;
 								}
 							}
-							key = prefix + src.getName();
+							listener.getLogger().println("File: " + src.getName() + ", 阿里prefix: " + prefix);
+							key = prefix + name;
+							listener.getLogger().println("File: " + src.getName() + ", 阿里key: " + key);
 						}
 						long startTime = System.currentTimeMillis();
 						InputStream inputStream = src.read();
@@ -146,6 +153,7 @@ public class AliyunOSSClient {
 	// support the common web file types for now
 	private static final String[] COMMON_CONTENT_TYPES = {
 			".js", 		"application/js",
+			".css", 	"text/css",
 			".json", 	"application/json",
 			".svg", 	"image/svg+xml",
 			".woff", 	"application/x-font-woff",
